@@ -124,22 +124,37 @@ const getAllProperties = (options, limit = 10) => {
       WHERE city LIKE $${queryParams.length}
     `;
   }
-  
-  // if (options.owner_id) {
-  //   queryParams.push(`%${options.owner_id}%`);
-  //   queryStr += `
-  //     WHERE owner_id = $${queryParams.length}
-  //   `;
-  // }
+
+  //NEED TO ADD ID
+  if (options.id) {
+    queryParams.push(options.id);
+    if (!queryParams.length) {
+      queryStr += `
+        WHERE id = $${queryParams.length}
+      `;
+    } else {
+      queryStr += `
+        AND id = $${queryParams.length}
+      `;
+    }
+  }
+
 
   //ADJUST FROM CENTS TO DEFAULT DOLLARS ON SEARCH
   if (options.minimum_price_per_night && options.maximum_price_per_night) {
     queryParams.push(options.minimum_price_per_night * 100);
     queryParams.push(options.maximum_price_per_night * 100);
-    queryStr += `
-      WHERE cost_per_night >= $${queryParams.length - 1}
-      AND cost_per_night <= $${queryParams.length}
-    `;
+    if (!queryParams.length) {
+      queryStr += `
+        WHERE cost_per_night >= $${queryParams.length - 1}
+        AND cost_per_night <= $${queryParams.length}
+      `;
+    } else {
+      queryStr += `
+        AND cost_per_night >= $${queryParams.length - 1}
+        AND cost_per_night <= $${queryParams.length}
+      `;
+    }
   }
 
   queryParams.push(limit);
@@ -179,5 +194,6 @@ const addProperty = function(property) {
   property.id = propertyId;
   properties[propertyId] = property;
   return Promise.resolve(property);
-}
+};
+
 exports.addProperty = addProperty;
