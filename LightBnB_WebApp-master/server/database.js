@@ -102,50 +102,46 @@ exports.getAllReservations = getAllReservations;
 
 const getAllProperties = (options, limit = 10) => {
   const queryParams = [];
+  const whereParam = ['WHERE '];
+
   let queryStr = `
     SELECT properties.*, avg(rating) AS average_rating 
     FROM properties
     JOIN property_reviews
     ON properties.id = property_id
+    
   `;
 
   //FILTERS IF MULTIPLE FILTERS, NEED [MORE ANDS ON WHERE]
   if (options.city) {
     queryParams.push(`%${options.city}%`);
-    queryStr += `
-      WHERE city LIKE $${queryParams.length}
-    `;
+    whereParam.push(`AND city LIKE $${queryParams.length}
+    `);
   }
 
-  //NEED TO ADD ID
   if (options.id) {
     queryParams.push(options.id);
-    if (!queryParams.length) {
-      queryStr += `
-        WHERE id = $${queryParams.length}
-      `;
-    } else {
-      queryStr += `
-        AND id = $${queryParams.length}
-      `;
-    }
+    whereParam.push(`AND id = $${queryParams.length}
+    `);
   }
 
-  //ADJUST FROM CENTS TO DEFAULT DOLLARS ON SEARCH
+  //ADJUSTED FROM CENTS TO DEFAULT DOLLARS ON SEARCH
   if (options.minimum_price_per_night && options.maximum_price_per_night) {
     queryParams.push(options.minimum_price_per_night * 100);
     queryParams.push(options.maximum_price_per_night * 100);
-    if (!queryParams.length) {
-      queryStr += `
-        WHERE cost_per_night >= $${queryParams.length - 1}
-        AND cost_per_night <= $${queryParams.length}
-      `;
-    } else {
-      queryStr += `
-        AND cost_per_night >= $${queryParams.length - 1}
-        AND cost_per_night <= $${queryParams.length}
-      `;
-    }
+    
+    whereParam.push(`
+      AND cost_per_night >= $${queryParams.length - 1}
+    `);
+    whereParam.push(`
+      AND cost_per_night <= $${queryParams.length}
+    `);
+
+  }
+
+  if (whereParam.length > 1) {
+    whereParam[1] = whereParam[1].replace('AND', '');
+    queryStr += whereParam.join(' ');
   }
 
   queryParams.push(limit);
@@ -226,3 +222,21 @@ const addProperty = property => {
 };
 
 exports.addProperty = addProperty;
+
+const addReservation = reservation => {
+  const queryStr = `
+    INSERT INTO reservations
+    (start_date, end_date, property_id, guest_id) 
+    VALUES 
+    ($1, $2, $3, $4) RETURNING *
+  `;
+  const values = [reservation.start_date, reservation.end_date, reservation.property_id, reservation.guest_id];
+
+  return db
+    .query(queryStr, values)
+    .then(res => console.log(res))
+    .catch(err => err);
+  
+};
+
+exports.addReservation = addReservation;

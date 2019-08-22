@@ -27,6 +27,7 @@ $(() => {
           <li class="search_button">Search</li>
           <li>${user.name}</li>
           <li class="create_listing_button">Create Listing</li>
+          <li class="create_reservations_button">Create Reservations</li>
           <li class="my_listing_button">My Listings</li>
           <li class="my_reservations_button">My Reservations</li>
           <li class="logout_button">Log Out</li>
@@ -92,4 +93,7 @@ $(() => {
     views_manager.show('newProperty');
   });
 
+  $('header').on('click', '.create_reservations_button', function() {
+    views_manager.show('newReservationForm');
+  });
 });
