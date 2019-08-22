@@ -1,13 +1,12 @@
-const properties = require('./json/properties.json');
-const users = require('./json/users.json');
-const { Pool } = require('pg');
+// const { Pool } = require('pg');
+const db = require('./db/index');
 
-const pool = new Pool({
-  user: 'vagrant',
-  password: '123',
-  host: 'localhost',
-  database: 'lightbnb'
-});
+// const pool = new Pool({
+//   user: 'vagrant',
+//   password: '123',
+//   host: 'localhost',
+//   database: 'lightbnb'
+// });
 
 /// Users
 
@@ -20,7 +19,7 @@ const pool = new Pool({
 const getUserWithEmail = email => {
   const queryStr = 'SELECT * FROM users WHERE email = $1';
 
-  return pool
+  return db
     .query(queryStr, [email])
     .then(res => res.rows[0])
     .catch(err => null);
@@ -37,7 +36,7 @@ exports.getUserWithEmail = getUserWithEmail;
 const getUserWithId = id => {
   const queryStr = 'SELECT * FROM users WHERE id = $1';
 
-  return pool
+  return db
     .query(queryStr, [id])
     .then(res => res.rows[0])
     .catch(err => err);
@@ -49,12 +48,6 @@ exports.getUserWithId = getUserWithId;
  * @param {{name: string, password: string, email: string}} user
  * @return {Promise<{}>} A promise to the user.
  */
-// const addUser =  function(user) {
-//   const userId = Object.keys(users).length + 1;
-//   user.id = userId;
-//   users[userId] = user;
-//   return Promise.resolve(user);
-// }
 
 const addUser = user => {
   const queryStr = `
@@ -63,7 +56,7 @@ const addUser = user => {
   `;
   const values = [user.name, user.email, user.password];
 
-  return pool
+  return db
     .query(queryStr, values)
     .then(res => user)
     .catch(err => err);
@@ -90,7 +83,7 @@ const getAllReservations = (guest_id, limit = 10) => {
   `;
   const values = [guest_id, limit];
   
-  return pool
+  return db
     .query(queryStr, values)
     .then(res => res.rows)
     .catch(err => err);
@@ -109,7 +102,6 @@ exports.getAllReservations = getAllReservations;
 
 const getAllProperties = (options, limit = 10) => {
   const queryParams = [];
-
   let queryStr = `
     SELECT properties.*, avg(rating) AS average_rating 
     FROM properties
@@ -138,7 +130,6 @@ const getAllProperties = (options, limit = 10) => {
       `;
     }
   }
-
 
   //ADJUST FROM CENTS TO DEFAULT DOLLARS ON SEARCH
   if (options.minimum_price_per_night && options.maximum_price_per_night) {
@@ -169,7 +160,7 @@ const getAllProperties = (options, limit = 10) => {
       LIMIT $${queryParams.length - 1};
     `;
   } else {
-    queryStr += `
+    queryStr += ` 
       GROUP BY properties.id
       ORDER BY cost_per_night
       LIMIT $${queryParams.length};
@@ -178,7 +169,7 @@ const getAllProperties = (options, limit = 10) => {
 
   console.log(queryStr, queryParams);
 
-  return pool.query(queryStr, queryParams)
+  return db.query(queryStr, queryParams)
     .then(res => res.rows);
 };
 
@@ -189,13 +180,6 @@ exports.getAllProperties = getAllProperties;
  * @param {{}} property An object containing all of the property details.
  * @return {Promise<{}>} A promise to the property.
  */
-// const addProperty = function(property) {
-//   console.log(property);
-//   const propertyId = Object.keys(properties).length + 1;
-//   property.id = propertyId;
-//   properties[propertyId] = property;
-//   return Promise.resolve(property);
-// };
 
 const addProperty = property => {
   const queryStr = `
@@ -234,7 +218,7 @@ const addProperty = property => {
     property.number_of_bedrooms
   ];
 
-  return pool
+  return db
     .query(queryStr, values)
     .then(res => res)
     .catch(err => err);
